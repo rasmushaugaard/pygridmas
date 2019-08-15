@@ -6,10 +6,19 @@ world = World(w=size, h=size, torus_enabled=True)
 
 class Wall(Agent):
     color = Colors.WHITE
-    start_active = False
-    group_ids = (0,)
+    group_ids = {0}  # A python set
 
 
+class Mover(Agent):
+    color = Colors.BLUE
+    group_ids = {1}
+    group_collision_ids = {0, 1}  # Not able to enter wall tiles or other Mover tiles
+
+    def step(self):
+        self.move_rel(Vec2D.random_grid_dir())
+
+
+# Create walls
 x1, x2 = round(size * 0.3), round(size * 0.7)
 y1, y2 = round(size * 0.6), round(size * 0.8)
 
@@ -23,17 +32,10 @@ for y in (y1, y2):
     for x in range(x1 + 1, x2):
         world.add_agent(Wall(), Vec2D(x, y))
 
+# Add Mover agents
+for _ in range(200):
+    world.add_agent(Mover(), Vec2D(size // 2, size // 4))
 
-class Mover(Agent):
-    color = Colors.BLUE
-    group_collision_ids = (0,)
-
-    def step(self):
-        self.move_rel(Vec2D.random_grid_dir())
-
-
-for i in range(100):
-    world.add_agent(Mover(), Vec2D(size // 2, size // 2))
-
-vis = Visualizer(world, scale=3, target_speed=100)
+# Start and visualize simulation
+vis = Visualizer(world, scale=3, target_speed=200)
 vis.start()

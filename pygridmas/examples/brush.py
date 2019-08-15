@@ -10,6 +10,15 @@ world = World(w=size, h=size, torus_enabled=True)
 class Canvas(Agent):
     color = Colors.BLACK
 
+    def initialize(self):
+        # If there are many agents with no step method,
+        # performance can be increased by deactivating them.
+        self.deactivate()
+
+    def step(self):
+        # Will not be called because of deactivation.
+        pass
+
     def receive_event(self, emitter_pos: Vec2D, data):
         dir = world.shortest_way(emitter_pos, self.pos())
         dist = dir.magnitude()

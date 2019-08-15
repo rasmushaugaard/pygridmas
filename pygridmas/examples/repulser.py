@@ -25,8 +25,8 @@ class Repulser(Agent):
             self.move_towards(self.start_target)
             self.reached_target = self.pos() == self.start_target
         else:
-            near_agents = self.box_scan(10)
-            if len(near_agents) > 0:
+            near_agents = self.box_scan(10, sort=False)
+            if near_agents:
                 self.color = Colors.RED
                 if random.random() < 0.2:
                     self.move_rel(Vec2D.random_grid_dir())
@@ -38,7 +38,7 @@ class Repulser(Agent):
 
 
 # Add a number of Repulsers to the world
-for i in range(size ** 2 // 155):
+for _ in range(size ** 2 // 155):
     world.add_agent(Repulser())
 
 # Visualize the world. The visualizer will call world.step(),

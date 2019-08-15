@@ -11,10 +11,9 @@ class World:
         self.h = h
         self.m = [[[] for _ in range(w)] for _ in range(h)]
         self.torus_enabled = torus_enabled
-
         self.time = 0
-
         self.agents = {}
+        self.active_agents = {}
         self.agent_pos = {}
         self.agent_counter = itertools.count()
 
@@ -25,17 +24,24 @@ class World:
         return Vec2D(random.randint(0, self.w - 1), random.randint(0, self.h - 1))
 
     def step(self):
-        agent_ids = list(self.agents.keys())
+        agent_ids = list(self.active_agents.keys())
         for agent_id in agent_ids:
             if agent_id in self.agents:
                 self.agents[agent_id].step()
         self.time += 1
 
+    def cleanup(self):
+        for agent in self.agents.values():
+            agent.cleanup()
+
     def add_agent(self, agent, pos: Vec2D = None):
         idx = agent.idx = next(self.agent_counter)
-        pos = pos or self.random_pos()
+        if pos is None:
+            pos = self.random_pos()
+        if pos is not False:
+            self.agent_pos[idx] = pos
         self.agents[idx] = agent
-        self.agent_pos[idx] = pos
+        self.active_agents[idx] = agent
         self.at(pos).append(agent)
         agent.world = self
         agent.initialize()
@@ -45,8 +51,10 @@ class World:
         agent.cleanup()
         agent.world = None
         self.agents.pop(idx)
-        pos = self.agent_pos.pop(idx)
-        self.at(pos).remove(agent)
+        self.active_agents.pop(idx, None)
+        pos = self.agent_pos.pop(idx, False)
+        if pos:
+            self.at(pos).remove(agent)
 
     def move_agent(self, idx, pos):
         # Boundary check
@@ -86,6 +94,36 @@ class World:
 
     def is_inside_world(self, vec: Vec2D):
         return 0 < vec.x < self.w and 0 < vec.y < self.h
+
+    def box_scan_no_torus(self, cx, cy, rng):
+        agents, m = [], self.m
+        xlo, xhi = max(cx - rng, 0), min(cx + rng, self.w - 1)
+        ylo, yhi = max(cy - rng, 0), min(cy + rng, self.h - 1)
+        for y in range(ylo, yhi + 1):
+            for x in range(xlo, xhi + 1):
+                agents += m[y][x]
+        return agents
+
+    def box_scan_torus(self, cx, cy, rng):
+        agents, m = [], self.m
+        xlo, xhi = cx - rng, cx + rng
+        ylo, yhi = cy - rng, cy + rng
+        x_ranges = [(xlo, xhi)]
+        y_ranges = [(ylo, yhi)]
+        if xlo < 0:
+            x_ranges = [(xlo % self.w, self.w - 1), (0, xhi)]
+        elif xhi >= self.w:
+            x_ranges = [(xlo, self.w - 1), (0, xhi % self.w)]
+        if ylo < 0:
+            y_ranges = [(ylo % self.h, self.h - 1), (0, yhi)]
+        elif yhi >= self.h:
+            y_ranges = [(ylo, self.h - 1), (0, yhi % self.h)]
+        for y_range in y_ranges:
+            for x_range in x_ranges:
+                for y in range(y_range[0], y_range[1] + 1):
+                    for x in range(x_range[0], x_range[1] + 1):
+                        agents += m[y][x]
+        return agents
 
     def box_scan_sorted_no_torus(self, cx, cy, rng):
         agents, m = [], self.m
@@ -143,8 +181,17 @@ class World:
             return agents
         return [agent for agent in agents if group_id in agent.group_ids]
 
-    def box_scan(self, center_pos: Vec2D, rng, group_id=None):
-        f = self.box_scan_sorted_torus if self.torus_enabled else self.box_scan_sorted_no_torus
+    def box_scan(self, center_pos: Vec2D, rng, sort=True, group_id=None):
+        if sort:
+            if self.torus_enabled:
+                f = self.box_scan_sorted_torus
+            else:
+                f = self.box_scan_sorted_no_torus
+        else:
+            if self.torus_enabled:
+                f = self.box_scan_torus
+            else:
+                f = self.box_scan_no_torus
         agents = f(center_pos.x, center_pos.y, rng)
         return self.filter_agents_by_group_id(agents, group_id)
 
@@ -162,11 +209,13 @@ class World:
 class Agent:
     idx = None
     color = Colors.GREY50
-    group_ids = ()
-    group_collision_ids = ()
+    group_ids = set()
+    group_collision_ids = set()
     world: World = None
 
     def __init__(self):
+        # since set is a mutable data type, make sure that
+        # each agent instance gets a new copy of the sets
         self.group_ids = set(self.group_ids)
         self.group_collision_ids = set(self.group_collision_ids)
 
@@ -216,22 +265,21 @@ class Agent:
         dir = self.world.shortest_way(pos, self.pos())
         return self.move_in_dir(dir)
 
-    def box_scan(self, rng, group_id=None):
-        # type: (int, int) -> List[Agent]
-        agents = self.world.box_scan(self.pos(), rng, group_id)
-        self_i = None
-        for i, agent in enumerate(agents):
-            if agent is self:
-                self_i = i
-                break
-            elif agent.pos() != self.pos():
-                break
-        if self_i is None:
-            return agents
-        return agents[:self_i] + agents[self_i + 1:]
+    def box_scan(self, rng, group_id=None, sort=True):
+        # type: (int, int, bool) -> List[Agent]
+        agents = self.world.box_scan(self.pos(), rng=rng, group_id=group_id, sort=sort)
+        if self in agents:
+            agents.remove(self)
+        return agents
 
     def emit_event(self, rng, data, group_id=None):
         pos = self.pos()
-        agents = self.box_scan(rng, group_id)
+        agents = self.box_scan(rng, group_id, sort=False)
         for agent in agents:
             agent.receive_event(pos, data)
+
+    def activate(self):
+        self.world.active_agents[self.idx] = self
+
+    def deactivate(self):
+        self.world.active_agents.pop(self.idx, None)

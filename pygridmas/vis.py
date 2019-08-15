@@ -6,12 +6,21 @@ import math
 
 
 class VisualizerBase(pyglet.window.Window):
-    def __init__(self, world, scale=3):
+    def __init__(self, world, scale=3, performance=True, render_labels=True):
         super(VisualizerBase, self).__init__()
         self.scale = scale
         self.width, self.height = world.w * scale, world.h * scale
         self.world = world
         self.labels = []
+        self.render_labels = render_labels
+        self.do_render = True
+        self.performance = performance
+        self.no_render_label = pyglet.text.Label(
+            'no render',
+            font_size=10,
+            x=self.world.w * 0.5 * self.scale, y=self.world.h * 0.5 * self.scale,
+            anchor_x="center", anchor_y="center"
+        )
         # force draw first draw
         self.force_draw()
 
@@ -28,72 +37,84 @@ class VisualizerBase(pyglet.window.Window):
         self.clear()
         positions = []
         colors = []
-        for y, row in enumerate(self.world.m):
-            yy = y * self.scale
-            for x, agents in enumerate(row):
-                xx = x * self.scale
-                n = math.ceil(math.sqrt(len(agents)))
-                if n == 0: continue
-                d = self.scale / n
-                for i, agent in enumerate(agents):
-                    row = i // n
-                    col = i - row * n
-                    xlo, ylo = xx + d * col, yy + d * row
-                    xhi, yhi = xlo + d, ylo + d
-                    positions += [xlo, ylo, xhi, ylo, xhi, yhi, xlo, yhi]
-                    colors += list(agent.color) * 4
-        pyglet.graphics.draw(
-            len(positions) // 2,
-            pyglet.gl.GL_QUADS,
-            ('v2f', positions),
-            ('c3f', colors)
-        )
-        for label in self.labels:
-            label.draw()
+        if self.do_render:
+            s = self.scale
+            if self.performance:
+                for yy, row in enumerate(self.world.m):
+                    yy *= s
+                    for xx, agents in enumerate(row):
+                        xx *= s
+                        if agents:
+                            positions += [xx, yy, xx + s, yy, xx + s, yy + s, xx, yy + s]
+                            colors += list(agents[0].color) * 4
+            else:
+                for y, row in enumerate(self.world.m):
+                    yy = y * self.scale
+                    for x, agents in enumerate(row):
+                        xx = x * self.scale
+                        n = math.ceil(math.sqrt(len(agents)))
+                        if n == 0: continue
+                        d = self.scale / n
+                        for i, agent in enumerate(agents):
+                            row = i // n
+                            col = i - row * n
+                            xlo, ylo = xx + d * col, yy + d * row
+                            xhi, yhi = xlo + d, ylo + d
+                            positions += [xlo, ylo, xhi, ylo, xhi, yhi, xlo, yhi]
+                            colors += list(agent.color) * 4
+            pyglet.graphics.draw(
+                len(positions) // 2,
+                pyglet.gl.GL_QUADS,
+                ('v2f', positions),
+                ('c3f', colors)
+            )
+        if self.render_labels:
+            for label in self.labels:
+                label.draw()
+        if not self.do_render:
+            self.no_render_label.draw()
 
 
 class Visualizer(VisualizerBase):
-    def __init__(self, world, scale=3, start_paused=False, target_speed=10, target_fps=60, show_label=True):
-        super(Visualizer, self).__init__(world, scale)
+    def __init__(self, world, scale=3, start_paused=False, target_speed=40, target_fps=30, render_labels=True,
+                 performance=True):
+        super(Visualizer, self).__init__(world, scale, performance, render_labels)
         self.pause = start_paused
         self.target_speed = target_speed
         self.target_fps = target_fps
         self.target_dt_frame = 1 / target_fps
         self.last_step = 0
         self.last_update = None
+        self.last_update_end = time.time()
         self.speed = target_speed
         self.dt_frame = self.target_dt_frame
         pyglet.clock.schedule_interval(self.update, self.target_dt_frame)
 
         self.last_label_update = 0
         self.speed_label = pyglet.text.Label(
-            '',
-            font_size=10,
-            x=2, y=1,
+            '', font_size=10, x=2, y=1,
             anchor_x='left', anchor_y='bottom'
         )
-        if show_label:
-            self.labels.append(self.speed_label)
+        self.performance_label = pyglet.text.Label(
+            '', font_size=10, x=2, y=14,
+            anchor_x='left', anchor_y='bottom'
+        )
+        self.labels += [self.speed_label, self.performance_label]
 
     def get_target_dt_step(self):
         return 1 / self.target_speed
 
     def update(self, dt):
+        t = time.time()
         i = 0
-        if not self.pause and self.get_target_dt_step() < time.time() - self.last_step:
-            self.last_step = time.time()
-            start_time = time.time()
+        if not self.pause and t - self.last_step > self.get_target_dt_step():
+            self.last_step = t
             for i in itertools.count(1):
                 self.world.step()
                 if i >= self.target_speed / self.target_fps:
                     break
-                if time.time() - start_time > self.target_dt_frame:
+                if time.time() - t > self.target_dt_frame:
                     break
-
-        t = time.time()
-        if self.last_update is not None:
-            dt = time.time() - self.last_update
-        self.last_update = t
 
         self.dt_frame = self.dt_frame * 0.9 + 0.1 * dt
         self.speed = self.speed * 0.9 + 0.1 * i / self.dt_frame
@@ -105,6 +126,8 @@ class Visualizer(VisualizerBase):
         if self.pause:
             self.speed_label.text = 'paused'
             self.last_label_update = 0
+        self.no_render_label.text = '' if self.do_render else 'no render'
+        self.performance_label.text = 'P' if self.performance else ''
 
     def on_key_press(self, symbol, _):
         if symbol == key.SPACE:
@@ -119,3 +142,12 @@ class Visualizer(VisualizerBase):
         if symbol == key.DOWN:
             self.pause = False
             self.target_speed *= 0.5
+        if symbol == key.R:
+            self.do_render = not self.do_render
+        if symbol == key.P:
+            self.performance = not self.performance
+        if symbol == key.L:
+            self.render_labels = not self.render_labels
+        if symbol == key.ESCAPE:
+            self.world.cleanup()
+            pyglet.app.exit()

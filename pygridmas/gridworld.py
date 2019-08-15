@@ -25,8 +25,10 @@ class World:
         return Vec2D(random.randint(0, self.w - 1), random.randint(0, self.h - 1))
 
     def step(self):
-        for agent in self.agents.values():
-            agent.step()
+        agent_ids = list(self.agents.keys())
+        for agent_id in agent_ids:
+            if agent_id in self.agents:
+                self.agents[agent_id].step()
         self.time += 1
 
     def add_agent(self, agent, pos: Vec2D = None):
@@ -214,9 +216,9 @@ class Agent:
         dir = self.world.shortest_way(pos, self.pos())
         return self.move_in_dir(dir)
 
-    def box_scan(self, rng, group_ids=None):
-        # type: (int, List[int]) -> List[Agent]
-        agents = self.world.box_scan(self.pos(), rng, group_ids)
+    def box_scan(self, rng, group_id=None):
+        # type: (int, int) -> List[Agent]
+        agents = self.world.box_scan(self.pos(), rng, group_id)
         self_i = None
         for i, agent in enumerate(agents):
             if agent is self:

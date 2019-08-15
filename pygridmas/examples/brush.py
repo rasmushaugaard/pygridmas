@@ -9,7 +9,6 @@ world = World(w=size, h=size, torus_enabled=True)
 
 class Canvas(Agent):
     color = Colors.BLACK
-    start_active = False
 
     def receive_event(self, emitter_pos: Vec2D, data):
         dir = world.shortest_way(emitter_pos, self.pos())
@@ -29,7 +28,7 @@ for x in range(size):
 
 
 class Brush(Agent):
-    color = Colors.BLACK
+    color = Colors.WHITE
     start_target: Vec2D = None
     reached_target = False
 

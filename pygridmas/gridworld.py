@@ -15,7 +15,6 @@ class World:
         self.time = 0
 
         self.agents = {}
-        self.active_agents = []
         self.agent_pos = {}
         self.agent_counter = itertools.count()
 
@@ -26,7 +25,7 @@ class World:
         return Vec2D(random.randint(0, self.w - 1), random.randint(0, self.h - 1))
 
     def step(self):
-        for agent in self.active_agents:
+        for agent in self.agents.values():
             agent.step()
         self.time += 1
 
@@ -34,8 +33,6 @@ class World:
         idx = agent.idx = next(self.agent_counter)
         pos = pos or self.random_pos()
         self.agents[idx] = agent
-        if agent.start_active:
-            self.active_agents.append(agent)
         self.agent_pos[idx] = pos
         self.at(pos).append(agent)
         agent.world = self
@@ -46,7 +43,6 @@ class World:
         agent.cleanup()
         agent.world = None
         self.agents.pop(idx)
-        self.active_agents.remove(agent)
         pos = self.agent_pos.pop(idx)
         self.at(pos).remove(agent)
 
@@ -163,7 +159,6 @@ class World:
 
 class Agent:
     idx = None
-    start_active = True
     color = Colors.GREY50
     group_ids = ()
     group_collision_ids = ()
@@ -238,11 +233,3 @@ class Agent:
         agents = self.box_scan(rng, group_id)
         for agent in agents:
             agent.receive_event(pos, data)
-
-    def deactivate(self):
-        if self in self.world.active_agents:
-            self.world.active_agents.remove(self)
-
-    def activate(self):
-        if not self in self.world.active_agents:
-            self.world.active_agents.append(self)

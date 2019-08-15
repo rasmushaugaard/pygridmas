@@ -1,4 +1,4 @@
-# pyludo
+# pygridmas
 A python Multi Agent System grid world simulator for the MAS course on SDU
 ### install
 

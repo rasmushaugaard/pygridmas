@@ -277,7 +277,7 @@ class Agent:
         return self.move_in_dir(dir)
 
     def box_scan(self, rng, group_id=None, sort=True):
-        # type: (int, int, bool) -> List[Agent]
+        # type: (int, any, bool) -> List[Agent]
         agents = self.world.box_scan(self.pos(), rng=rng, group_id=group_id, sort=sort)
         if self in agents:
             agents.remove(self)
@@ -292,3 +292,6 @@ class Agent:
 
     def deactivate(self):
         self.world.active_agents.pop(self.idx, None)
+
+    def vec_to(self, pos: Vec2D):
+        return self.world.shortest_way(pos, self.pos())

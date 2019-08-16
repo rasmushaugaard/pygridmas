@@ -24,11 +24,20 @@ class Vec2D:
     def __mul__(self, scalar):
         return Vec2D(self.x * scalar, self.y * scalar)
 
+    def __truediv__(self, scalar):
+        return Vec2D(self.x / scalar, self.y / scalar)
+
+    def __floordiv__(self, i):
+        return Vec2D(self.x // i, self.y // i)
+
     def __eq__(self, other):
         return type(other) == Vec2D and self.x == other.x and self.y == other.y
 
     def __hash__(self):
         return hash((self.x, self.y))
+
+    def inf_magnitude(self):
+        return max(abs(self.x), abs(self.y))
 
     def magnitude(self):
         return math.sqrt(self.x ** 2 + self.y ** 2)
@@ -44,6 +53,9 @@ class Vec2D:
 
     def is_zero_vec(self):
         return self.x == self.y == 0
+
+    def round(self):
+        return Vec2D(round(self.x), round(self.y))
 
     @staticmethod
     def random_grid_dir():

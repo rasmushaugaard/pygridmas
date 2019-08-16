@@ -274,7 +274,10 @@ class Agent:
 
     def move_away_from(self, pos: Vec2D):
         dir = self.world.shortest_way(pos, self.pos())
-        return self.move_in_dir(dir)
+        if dir.is_zero_vec():
+            return self.move_in_dir(Vec2D.random_grid_dir())
+        else:
+            return self.move_in_dir(dir)
 
     def box_scan(self, rng, group_id=None, sort=True):
         # type: (int, any, bool) -> List[Agent]

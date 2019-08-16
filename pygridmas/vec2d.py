@@ -27,6 +27,9 @@ class Vec2D:
     def __eq__(self, other):
         return type(other) == Vec2D and self.x == other.x and self.y == other.y
 
+    def __hash__(self):
+        return hash((self.x, self.y))
+
     def magnitude(self):
         return math.sqrt(self.x ** 2 + self.y ** 2)
 

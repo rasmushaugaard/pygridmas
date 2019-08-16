@@ -16,6 +16,7 @@ class World:
         self.active_agents = {}
         self.agent_pos = {}
         self.agent_counter = itertools.count()
+        self.event_emit_queue = []
 
     def at(self, pos: Vec2D):
         return self.m[pos.y][pos.x]
@@ -24,10 +25,17 @@ class World:
         return Vec2D(random.randint(0, self.w - 1), random.randint(0, self.h - 1))
 
     def step(self):
-        agent_ids = list(self.active_agents.keys())
-        for agent_id in agent_ids:
+        # call step on all active agents
+        # the loop should allow the list to change hence the awkward loop
+        for agent_id in list(self.active_agents.keys()):
             if agent_id in self.agents:
                 self.agents[agent_id].step()
+        # emit events after agent steps
+        for agents, emit_pos, data in self.event_emit_queue:
+            for agent in agents:
+                if agent.idx in self.agents:
+                    agent.receive_event(emit_pos, data)
+        self.event_emit_queue.clear()
         self.time += 1
 
     def cleanup(self):
@@ -52,7 +60,7 @@ class World:
         agent.world = None
         self.agents.pop(idx)
         self.active_agents.pop(idx, None)
-        pos = self.agent_pos.pop(idx, False)
+        pos = self.agent_pos.pop(idx, None)
         if pos:
             self.at(pos).remove(agent)
 
@@ -205,6 +213,9 @@ class World:
                 dy = dy - self.h if dy > 0 else dy + self.h
         return Vec2D(dx, dy)
 
+    def emit_event(self, agents, emit_pos, data):
+        self.event_emit_queue.append((agents, emit_pos, data))
+
 
 class Agent:
     idx = None
@@ -273,10 +284,8 @@ class Agent:
         return agents
 
     def emit_event(self, rng, data, group_id=None):
-        pos = self.pos()
         agents = self.box_scan(rng, group_id, sort=False)
-        for agent in agents:
-            agent.receive_event(pos, data)
+        self.world.emit_event(agents, self.pos(), data)
 
     def activate(self):
         self.world.active_agents[self.idx] = self

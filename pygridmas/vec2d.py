@@ -15,6 +15,9 @@ class Vec2D:
         self.x = x
         self.y = y
 
+    def __neg__(self):
+        return Vec2D(-self.x, -self.y)
+
     def __sub__(self, other):
         return Vec2D(self.x - other.x, self.y - other.y)
 
@@ -57,6 +60,14 @@ class Vec2D:
     def round(self):
         return Vec2D(round(self.x), round(self.y))
 
+    def normalize(self):
+        return self / self.magnitude()
+
     @staticmethod
     def random_grid_dir():
         return Vec2D(random.randint(-1, 1), random.randint(-1, 1))
+
+    @staticmethod
+    def random_dir():
+        angle = random.random() * math.pi * 2
+        return Vec2D(math.cos(angle), math.sin(angle))

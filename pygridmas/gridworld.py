@@ -298,3 +298,9 @@ class Agent:
 
     def vec_to(self, pos: Vec2D):
         return self.world.shortest_way(pos, self.pos())
+
+    def dist(self, pos: Vec2D):
+        return self.vec_to(pos).magnitude()
+
+    def inf_dist(self, pos: Vec2D):
+        return self.vec_to(pos).inf_magnitude()

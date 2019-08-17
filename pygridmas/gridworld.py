@@ -174,11 +174,11 @@ class World:
             for x in xrange:
                 agents += m[_ylo][x] + m[_yhi][x]
 
-            yrange = range(ylo, yhi + 1)
+            yrange = range(ylo + 1, yhi)
             if ylo != _ylo:
-                yrange = itertools.chain(range(_ylo, self.h), range(yhi + 1))
+                yrange = itertools.chain(range(_ylo + 1, self.h), range(yhi))
             elif yhi != _yhi:
-                yrange = itertools.chain(range(ylo, self.h), range(_yhi + 1))
+                yrange = itertools.chain(range(ylo + 1, self.h), range(_yhi))
             for y in yrange:
                 agents += m[y][_xlo] + m[y][_xhi]
         return agents

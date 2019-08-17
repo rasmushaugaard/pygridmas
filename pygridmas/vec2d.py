@@ -11,7 +11,7 @@ def clamp(val, mi, ma):
 
 
 class Vec2D:
-    def __init__(self, x, y):
+    def __init__(self, x: float = 0, y: float = 0):
         self.x = x
         self.y = y
 
@@ -38,6 +38,12 @@ class Vec2D:
 
     def __hash__(self):
         return hash((self.x, self.y))
+
+    def __str__(self):
+        return "Vec2D({}, {})".format(self.x, self.y)
+
+    def __repr__(self):
+        return str(self)
 
     def inf_magnitude(self):
         return max(abs(self.x), abs(self.y))

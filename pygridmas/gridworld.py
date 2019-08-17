@@ -297,7 +297,7 @@ class Agent:
         self.world.active_agents.pop(self.idx, None)
 
     def vec_to(self, pos: Vec2D):
-        return self.world.shortest_way(pos, self.pos())
+        return self.world.shortest_way(self.pos(), pos)
 
     def dist(self, pos: Vec2D):
         return self.vec_to(pos).magnitude()

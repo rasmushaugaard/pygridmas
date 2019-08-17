@@ -46,7 +46,7 @@ class VisualizerBase(pyglet.window.Window):
                         xx *= s
                         if agents:
                             positions += [xx, yy, xx + s, yy, xx + s, yy + s, xx, yy + s]
-                            colors += list(agents[0].color) * 4
+                            colors += list(agents[-1].color) * 4
             else:
                 for y, row in enumerate(self.world.m):
                     yy = y * self.scale

@@ -34,10 +34,10 @@ class World:
         # emit events after agent steps
         events = self.event_emit_queue
         self.event_emit_queue = []
-        for agents, emit_pos, data in events:
+        for agents, event_type, data in events:
             for agent in agents:
                 if agent.idx in self.agents:
-                    agent.receive_event(emit_pos, data)
+                    agent.receive_event(event_type, data)
         self.time += 1
 
     def cleanup(self):
@@ -239,7 +239,7 @@ class Agent:
     def step(self):
         pass
 
-    def receive_event(self, emitter_pos: Vec2D, data):
+    def receive_event(self, event_type, data):
         pass
 
     def cleanup(self):
@@ -293,9 +293,9 @@ class Agent:
             agents.remove(self)
         return agents
 
-    def emit_event(self, rng, data, group_id=None):
+    def emit_event(self, rng, event_type, data, group_id=None):
         agents = self.box_scan(rng, group_id, sort=False)
-        self.world.emit_event(agents, self.pos(), data)
+        self.world.emit_event(agents, event_type, data)
 
     def activate(self):
         self.world.active_agents[self.idx] = self

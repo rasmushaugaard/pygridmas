@@ -36,7 +36,7 @@ class MyAgent(Agent):
         # Called in 'world.step()' (at every step of the simulation).
         pass
 
-    def receive_event(self, emitter_pos: Vec2D, data):
+    def receive_event(self, event_type, data):
         # Handle events emitted from other agents.
         pass
 

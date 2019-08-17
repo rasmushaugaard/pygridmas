@@ -19,16 +19,18 @@ class Canvas(Agent):
         # Will not be called because of deactivation.
         pass
 
-    def receive_event(self, emitter_pos: Vec2D, data):
-        dir = world.shortest_way(emitter_pos, self.pos())
-        dist = dir.magnitude()
-        dir_angle = (dir.angle() + (self.world.time * 0.1)) % (math.pi * 2)
-        hue = dir_angle / (2 * math.pi)
+    def receive_event(self, event_type, data):
+        if event_type == "PAINT":
+            emit_pos = data
+            dir = -self.vec_to(emit_pos)
+            dist = dir.magnitude()
+            dir_angle = (dir.angle() + (self.world.time * 0.1)) % (math.pi * 2)
+            hue = dir_angle / (2 * math.pi)
 
-        if dist < brush_radius:
-            self.color = colorsys.hsv_to_rgb(hue, 1, 1)
-        if dist < brush_radius * 0.5:
-            self.color = Colors.WHITE
+            if dist < brush_radius:
+                self.color = colorsys.hsv_to_rgb(hue, 1, 1)
+            if dist < brush_radius * 0.5:
+                self.color = Colors.WHITE
 
 
 for x in range(size):
@@ -43,7 +45,7 @@ class Brush(Agent):
 
     def step(self):
         self.move_rel(Vec2D.random_grid_dir())
-        self.emit_event(brush_radius, None)
+        self.emit_event(brush_radius, "PAINT", self.pos())
 
 
 world.add_agent(Brush(), Vec2D(size // 2, size // 2))

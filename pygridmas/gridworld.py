@@ -215,8 +215,8 @@ class World:
                 dy = dy - self.h if dy > 0 else dy + self.h
         return Vec2D(dx, dy)
 
-    def emit_event(self, agents, emit_pos, data):
-        self.event_emit_queue.append((agents, emit_pos, data))
+    def emit_event(self, agents, event_type, data=None):
+        self.event_emit_queue.append((agents, event_type, data))
 
 
 class Agent:
@@ -293,7 +293,7 @@ class Agent:
             agents.remove(self)
         return agents
 
-    def emit_event(self, rng, event_type, data, group_id=None):
+    def emit_event(self, rng, event_type, data=None, group_id=None):
         agents = self.box_scan(rng, group_id, sort=False)
         self.world.emit_event(agents, event_type, data)
 

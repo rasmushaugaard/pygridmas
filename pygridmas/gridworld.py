@@ -44,15 +44,15 @@ class World:
         for agent in self.agents.values():
             agent.cleanup()
 
-    def add_agent(self, agent, pos: Vec2D = None):
+    def add_agent(self, agent, pos: Union[Vec2D, bool] = None):
         idx = agent.idx = next(self.agent_counter)
         if pos is None:
             pos = self.random_pos()
         if pos is not False:
             self.agent_pos[idx] = pos
+            self.at(pos).append(agent)
         self.agents[idx] = agent
         self.active_agents[idx] = agent
-        self.at(pos).append(agent)
         agent.world = self
         agent.initialize()
 

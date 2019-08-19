@@ -150,18 +150,19 @@ class World:
             ylo, yhi = cy - d, cy + d
             _xlo, _xhi = max(0, xlo), min(self.w - 1, xhi)
             _ylo, _yhi = max(0, ylo), min(self.h - 1, yhi)
+            if xhi < self.w:
+                for y in reversed(range(_ylo + 1, _yhi)):
+                    agents += m[y][xhi]
             if ylo >= 0:
-                for x in range(_xlo, _xhi + 1):
+                for x in reversed(range(_xlo, _xhi + 1)):
                     agents += m[ylo][x]
-            if yhi < self.h:
-                for x in range(_xlo, _xhi + 1):
-                    agents += m[yhi][x]
             if xlo >= 0:
                 for y in range(_ylo + 1, _yhi):
                     agents += m[y][xlo]
-            if xhi < self.w:
-                for y in range(_ylo + 1, _yhi):
-                    agents += m[y][xhi]
+            if yhi < self.h:
+                for x in range(_xlo, _xhi + 1):
+                    agents += m[yhi][x]
+
         return agents
 
     def box_scan_sorted_torus(self, cx, cy, rng):
@@ -180,16 +181,20 @@ class World:
                 xrange = itertools.chain(range(_xlo, self.w), range(xhi + 1))
             elif xhi != _xhi:
                 xrange = itertools.chain(range(xlo, self.w), range(_xhi + 1))
-            for x in xrange:
-                agents += m[_ylo][x] + m[_yhi][x]
-
             yrange = range(ylo + 1, yhi)
             if ylo != _ylo:
                 yrange = itertools.chain(range(_ylo + 1, self.h), range(yhi))
             elif yhi != _yhi:
                 yrange = itertools.chain(range(ylo + 1, self.h), range(_yhi))
+            for y in reversed(list(yrange)):
+                agents += m[y][_xhi]
+            for x in reversed(list(xrange)):
+                agents += m[_ylo][x]
             for y in yrange:
-                agents += m[y][_xlo] + m[y][_xhi]
+                agents += m[y][_xlo]
+            for x in xrange:
+                agents += m[_yhi][x]
+
         return agents
 
     @staticmethod

@@ -3,6 +3,7 @@ from pyglet.window import key
 import time
 import itertools
 import math
+from pygridmas import World
 
 
 class VisualizerBase(pyglet.window.Window):
@@ -10,7 +11,7 @@ class VisualizerBase(pyglet.window.Window):
         super(VisualizerBase, self).__init__()
         self.scale = scale
         self.width, self.height = world.w * scale, world.h * scale
-        self.world = world
+        self.world: World = world
         self.labels = []
         self.render_labels = render_labels
         self.do_render = True
@@ -79,6 +80,8 @@ class VisualizerBase(pyglet.window.Window):
                 label.draw()
         if not self.do_render:
             self.no_render_label.draw()
+        if self.world.ended:
+            pyglet.app.exit()
 
 
 class Visualizer(VisualizerBase):
@@ -155,5 +158,4 @@ class Visualizer(VisualizerBase):
         if symbol == key.L:
             self.render_labels = not self.render_labels
         if symbol == key.ESCAPE:
-            self.world.cleanup()
-            pyglet.app.exit()
+            self.world.end()

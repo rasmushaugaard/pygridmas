@@ -42,7 +42,7 @@ class MyAgent(Agent):
 
     def cleanup(self):
         # Called when removed from the world,
-        # or when 'world.cleanup()' is called.
+        # or when the world ends: world.end()
         pass
 
 

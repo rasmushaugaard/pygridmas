@@ -7,7 +7,7 @@ import math
 
 
 class World:
-    def __init__(self, w, h, torus_enabled=False):
+    def __init__(self, w, h, torus_enabled=False, max_steps=None):
         self.w = w
         self.h = h
         self.m = [[[] for _ in range(w)] for _ in range(h)]
@@ -18,6 +18,8 @@ class World:
         self.agent_pos = {}
         self.agent_counter = itertools.count()
         self.event_emit_queue = []
+        self.ended = False
+        self.max_steps = max_steps
 
     def at(self, pos: Vec2D):
         return self.m[pos.y][pos.x]
@@ -26,10 +28,12 @@ class World:
         return Vec2D(random.randint(0, self.w - 1), random.randint(0, self.h - 1))
 
     def step(self):
+        if self.ended:
+            return
         # call step on all active agents
         # the loop should allow the list to change hence the awkward loop
         for agent_id in list(self.active_agents.keys()):
-            if agent_id in self.agents:
+            if agent_id in self.active_agents:
                 self.agents[agent_id].step()
         # emit events after agent steps
         events = self.event_emit_queue
@@ -39,10 +43,13 @@ class World:
                 if agent.idx in self.agents:
                     agent.receive_event(event_type, data)
         self.time += 1
+        if self.max_steps is not None and self.time >= self.max_steps:
+            self.end()
 
-    def cleanup(self):
-        for agent in self.agents.values():
-            agent.cleanup()
+    def end(self):
+        self.ended = True
+        for agent_id in list(self.agents.keys()):
+            self.remove_agent(agent_id)
 
     def add_agent(self, agent, pos: Union[Vec2D, bool] = None):
         idx = agent.idx = next(self.agent_counter)
@@ -276,7 +283,7 @@ class Agent:
         return self.move_rel(Vec2D(dx, dy))
 
     def move_towards(self, pos: Vec2D):
-        dir = self.world.shortest_way(self.pos(), pos)
+        dir = self.vec_to(pos)
         return self.move_in_dir(dir)
 
     def move_away_from(self, pos: Vec2D):

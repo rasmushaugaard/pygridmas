@@ -9,9 +9,6 @@ class AgentCountLogger:
 
     def bind(logger, agent_class):
         class CountLoggingAgentClass(agent_class):
-            def __init__(self, *args):
-                super().__init__(*args)
-
             def initialize(self):
                 super().initialize()
                 logger.count += 1

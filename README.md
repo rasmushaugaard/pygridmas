@@ -62,7 +62,7 @@ vis.start()
 
 ### visualization hot keys
 * `space` pause/resume simulation
-* `escape` calls 'world.cleanup()' and terminates the simulation
+* `escape` calls 'world.end()' and terminates the simulation
 * `right arrow` step through simulation
 * `up arrow` increase simulation target speed
 * `down arrow` decrease simulation target speed

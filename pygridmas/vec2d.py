@@ -69,6 +69,9 @@ class Vec2D:
     def normalize(self):
         return self / self.magnitude()
 
+    def inf_normalize(self):
+        return self / self.inf_magnitude()
+
     @staticmethod
     def random_grid_dir():
         return Vec2D(random.randint(-1, 1), random.randint(-1, 1))
